@@ -18,5 +18,8 @@ wk.add({
   { "<leader>gc", telescope.git_commits, desc = "Telescope git commits" },
   { "<leader>gs", telescope.git_status, desc = "Telescope git status" },
   { "<leader>gb", telescope.git_branches, desc = "Telescope git branches" },
-  { "<leader>gg", function() gitgraph.draw({}, { all = true, max_count = 5000 }) end, desc = "Git Graph"}
+  { "<leader>gg", function() gitgraph.draw({}, { all = true, max_count = 5000 }) end, desc = "Git Graph"},
+  { "<leader>gd", "<cmd>DiffviewOpen<CR>", desc = "Git diff view" },
+  { "<leader>gh", "<cmd>DiffviewFileHistory %<CR>", desc = "Git file history" },
+  { "<leader>gH", "<cmd>DiffviewFileHistory<CR>", desc = "Git repo history" },
 })
