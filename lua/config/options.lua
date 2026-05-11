@@ -13,3 +13,16 @@ vim.opt.cursorline = true
 -- [ ]: ← → キーでも行またぎ移動を許可
 -- h l: ノーマルモードの h / l でも同様に行またぎ移動を許可
 vim.opt.whichwrap = "<,>,[,],h,l"
+
+-- 背景色はターミナル側に任せる
+local function use_terminal_background()
+  vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
+  vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
+  vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
+  vim.api.nvim_set_hl(0, "EndOfBuffer", { bg = "none" })
+end
+
+use_terminal_background()
+vim.api.nvim_create_autocmd("ColorScheme", {
+  callback = use_terminal_background,
+})

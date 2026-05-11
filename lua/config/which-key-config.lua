@@ -4,7 +4,13 @@ local telescope = require("telescope.builtin")
 local gitgraph = require('gitgraph')
 
 wk.add({
+  { mode = "n", silent = true },
+  { "<leader><Left>", "<C-w>h", desc = "Window left" },
+  { "<leader><Down>", "<C-w>j", desc = "Window down" },
+  { "<leader><Up>", "<C-w>k", desc = "Window up" },
+  { "<leader><Right>", "<C-w>l", desc = "Window right" },
   { "<leader>e", group = "Explorer" }, -- group
+  { "<leader>ee", "<cmd>Neotree reveal<CR>", desc = "Neotree reveal" },
   { "<leader>ef", "<cmd>Neotree focus<CR>", desc = "Neotree focus" },
   { "<leader>es", "<cmd>Neotree show<CR>", desc = "Neotree show" },
   { "<leader>ec", "<cmd>Neotree close<CR>", desc = "Neotree close" },

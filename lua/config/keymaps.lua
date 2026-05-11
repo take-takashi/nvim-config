@@ -1,2 +1,2 @@
--- 再帰マッピングなし、実行メッセージなし
-local opts = { noremap = true, silent = true }
+-- <leader> 系のキーマップは which-key-config.lua に集中させる
+-- ここに直接追加する場合は、再帰マッピングなし・実行メッセージなしを基本にする
