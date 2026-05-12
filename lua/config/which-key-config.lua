@@ -19,6 +19,7 @@ wk.add({
   { "<leader>ff", telescope.find_files, desc = "Telescope find files" },
   { "<leader>fg", telescope.live_grep, desc = "Telescope live grep" },
   { "<leader>fb", telescope.buffers, desc = "Telescope buffers" },
+  { "<leader>fd", function() require("config.delta-picker").open() end, desc = "Telescope git diff" },
   { "<leader>fh", telescope.help_tags, desc = "Telescope help tags" },
   { "<leader>g", group = "Git" }, -- group
   { "<leader>gc", telescope.git_commits, desc = "Telescope git commits" },
