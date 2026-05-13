@@ -1,11 +1,13 @@
 {
   "barbar.nvim": { "branch": "master", "commit": "53b5a2f34b68875898f0531032fbf090e3952ad7" },
+  "budoux.lua": { "branch": "main", "commit": "7f23658b127b9a74aae5b388fefcd997be30cbfc" },
   "delta.lua": { "branch": "main", "commit": "840fb6c9e5bf957915ddbeafffa4c0f839f1f8c2" },
   "deltaview.nvim": { "branch": "main", "commit": "4b8cfe11d2d55a1131ef6be03c72d6cffaa6b8d0" },
   "diffview.nvim": { "branch": "main", "commit": "4516612fe98ff56ae0415a259ff6361a89419b0a" },
   "gitgraph.nvim": { "branch": "main", "commit": "c16daa7d7dd597caf9085644c009cfa80b75db8e" },
   "gitsigns.nvim": { "branch": "main", "commit": "7c4faa3540d0781a28588cafbd4dd187a28ac6e3" },
   "lazy.nvim": { "branch": "main", "commit": "306a05526ada86a7b30af95c5cc81ffba93fef97" },
+  "md-render.nvim": { "branch": "main", "commit": "b12177a0590dd76cab9f407688fc1c5e44365d6c" },
   "mini.animate": { "branch": "main", "commit": "552c5d4998678eaffaa0a10cf5105823a6fdfcd4" },
   "neo-tree.nvim": { "branch": "v3.x", "commit": "9d6826582a3e8c84787bd7355df22a2812a1ad59" },
   "nui.nvim": { "branch": "main", "commit": "de740991c12411b663994b2860f1a4fd0937c130" },

@@ -21,6 +21,11 @@ wk.add({
   { "<leader>fb", telescope.buffers, desc = "Telescope buffers" },
   { "<leader>fd", function() require("config.delta-picker").open() end, desc = "Telescope git diff" },
   { "<leader>fh", telescope.help_tags, desc = "Telescope help tags" },
+  { "<leader>m", group = "Markdown" }, -- group
+  { "<leader>mp", "<cmd>MdRender auto on<CR>", desc = "Markdown auto preview" },
+  { "<leader>mt", "<Plug>(md-render-preview-tab)", desc = "Markdown preview tab" },
+  { "<leader>ms", "<cmd>MdRender split<CR>", desc = "Markdown preview split" },
+  { "<leader>md", "<Plug>(md-render-demo)", desc = "Markdown render demo" },
   { "<leader>g", group = "Git" }, -- group
   { "<leader>gc", telescope.git_commits, desc = "Telescope git commits" },
   { "<leader>gs", telescope.git_status, desc = "Telescope git status" },
