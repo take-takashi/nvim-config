@@ -27,6 +27,21 @@ return {
         return delta_treesitter.get_lua_pattern_token_strings(text)
       end
 
+      require("delta").setup({
+        highlight_groups = {
+          dark = {
+            DeltaDiffAddedLine = { bg = "#2f4f3f", default = false },
+            DeltaDiffRemovedLine = { bg = "#54323a", default = false },
+            DeltaDiffAddedWord = { bg = "#3f6f50", default = false },
+            DeltaDiffRemovedWord = { bg = "#7a3d48", default = false },
+            DeltaTitle = { fg = "#8caaee", default = false },
+            DeltaLineNrAdded = { fg = "#a6d189", bold = true, default = false },
+            DeltaLineNrRemoved = { fg = "#e78284", bold = true, default = false },
+            DeltaLineNrContext = { fg = "#c6d0f5", bold = true, default = false },
+          },
+        },
+      })
+
       require("deltaview").setup({
         fzf_picker = "telescope",
         line_numbers = true,
