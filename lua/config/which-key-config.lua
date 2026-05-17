@@ -30,6 +30,11 @@ wk.add({
   { "<leader>md", "<Plug>(md-render-demo)", desc = "Markdown render demo" },
   { "<leader>t", group = "Tree-sitter" }, -- group
   { "<leader>ti", "<cmd>TSInstallCurrent<CR>", desc = "Tree-sitter install current parser" },
+  { "<leader>z", group = "Terminal" },
+  { "<leader>zf", "<cmd>ToggleTerm direction=float<CR>", desc = "Terminal float" },
+  { "<leader>zh", "<cmd>ToggleTerm direction=horizontal<CR>", desc = "Terminal bottom" },
+  { "<leader>zv", "<cmd>ToggleTerm direction=vertical<CR>", desc = "Terminal vertical" },
+  { "<leader>zt", "<cmd>ToggleTerm direction=tab<CR>", desc = "Terminal tab" },
   { "<leader>g", group = "Git" }, -- group
   { "<leader>gc", telescope.git_commits, desc = "Telescope git commits" },
   { "<leader>gs", telescope.git_status, desc = "Telescope git status" },
