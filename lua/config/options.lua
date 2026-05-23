@@ -14,6 +14,9 @@ vim.opt.cursorline = true
 -- h l: ノーマルモードの h / l でも同様に行またぎ移動を許可
 vim.opt.whichwrap = "<,>,[,],h,l"
 
+-- コマンドライン補完は候補表示後に Tab で候補を順送りする
+vim.opt.wildmode = "longest:full,full"
+
 -- 背景色はターミナル側に任せる
 local function use_terminal_background()
   vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
