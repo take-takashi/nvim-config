@@ -130,6 +130,41 @@ local function untracked_files(path)
   return output_lines(stdout)
 end
 
+local function diffed_files(path, ref, include_untracked)
+  local code, stdout, stderr = run({ "git", "diff", "--name-only", ref }, path)
+  if code ~= 0 and code ~= 1 then
+    vim.notify(vim.trim(stderr), vim.log.levels.ERROR)
+    return {}
+  end
+
+  local files = {}
+  local seen = {}
+  for _, file in ipairs(output_lines(stdout)) do
+    table.insert(files, {
+      path = file,
+      untracked = false,
+    })
+    seen[file] = true
+  end
+
+  if include_untracked then
+    for _, file in ipairs(untracked_files(path)) do
+      if not seen[file] then
+        table.insert(files, {
+          path = file,
+          untracked = true,
+        })
+      end
+    end
+  end
+
+  table.sort(files, function(a, b)
+    return a.path < b.path
+  end)
+
+  return files
+end
+
 local function diff_output(path, args)
   local command = { "git", "diff", "--full-index", "-U10" }
   vim.list_extend(command, args)
@@ -139,23 +174,6 @@ local function diff_output(path, args)
     return nil
   end
   return stdout
-end
-
-local function uncommitted_diff(path)
-  local chunks = {}
-  local tracked = diff_output(path, { "HEAD" })
-  if tracked and tracked ~= "" then
-    table.insert(chunks, tracked)
-  end
-
-  for _, file in ipairs(untracked_files(path)) do
-    local untracked = diff_output(path, { "--no-index", "--", "/dev/null", file })
-    if untracked and untracked ~= "" then
-      table.insert(chunks, untracked)
-    end
-  end
-
-  return table.concat(chunks, "\n")
 end
 
 local function open_patch_diff(diffstring, name)
@@ -176,6 +194,105 @@ local function open_patch_diff(diffstring, name)
   delta.diff_highlight_diff(bufnr)
   delta.setup_delta_statuscolumn(bufnr)
   vim.api.nvim_buf_set_name(bufnr, "deltaview://diff/" .. name)
+end
+
+local function file_abs_path(root, file)
+  return root .. "/" .. file.path
+end
+
+local function open_regular_file(root, file)
+  local path = file_abs_path(root, file)
+  if vim.fn.filereadable(path) ~= 1 then
+    vim.notify("File does not exist in current worktree: " .. file.path, vim.log.levels.WARN)
+    return
+  end
+
+  vim.cmd.edit(vim.fn.fnameescape(path))
+end
+
+local open_delta_file_from_patch
+
+local function open_delta_file_current_worktree(root, ref, file)
+  local path = file_abs_path(root, file)
+  if vim.fn.isdirectory(vim.fn.fnamemodify(path, ":h")) ~= 1 then
+    open_delta_file_from_patch(root, ref, file, ref)
+    return
+  end
+  vim.cmd("Delta " .. vim.fn.fnameescape(path) .. " 10 " .. ref)
+end
+
+open_delta_file_from_patch = function(root, ref, file, title)
+  local diffstring
+  if file.untracked then
+    diffstring = diff_output(root, { "--no-index", "--", "/dev/null", file.path })
+  else
+    diffstring = diff_output(root, { ref, "--", file.path })
+  end
+  open_patch_diff(diffstring, title .. "/" .. file.path)
+end
+
+local function open_file_picker(opts)
+  local files = diffed_files(opts.root, opts.ref, opts.include_untracked)
+  if #files == 0 then
+    vim.notify("No files to display", vim.log.levels.INFO)
+    return
+  end
+
+  local pickers = require("telescope.pickers")
+  local finders = require("telescope.finders")
+  local config = require("telescope.config").values
+  local actions = require("telescope.actions")
+  local action_state = require("telescope.actions.state")
+
+  local function selected_file()
+    local selection = action_state.get_selected_entry()
+    if not selection then
+      return nil
+    end
+    return selection.value
+  end
+
+  pickers.new({}, {
+    prompt_title = opts.title .. "  <CR> diff / <C-o> open",
+    finder = finders.new_table({
+      results = files,
+      entry_maker = function(file)
+        return {
+          value = file,
+          display = file.path,
+          ordinal = file.path,
+        }
+      end,
+    }),
+    sorter = config.generic_sorter({}),
+    attach_mappings = function(prompt_bufnr, map)
+      actions.select_default:replace(function()
+        local file = selected_file()
+        actions.close(prompt_bufnr)
+        if not file then
+          return
+        end
+        if opts.current_worktree then
+          open_delta_file_current_worktree(opts.root, opts.ref, file)
+        else
+          open_delta_file_from_patch(opts.root, opts.ref, file, opts.title)
+        end
+      end)
+
+      local open_selected_file = function()
+        local file = selected_file()
+        actions.close(prompt_bufnr)
+        if file then
+          open_regular_file(opts.root, file)
+        end
+      end
+
+      map("i", "<C-o>", open_selected_file)
+      map("n", "<C-o>", open_selected_file)
+
+      return true
+    end,
+  }):find()
 end
 
 -- Telescope に並べるため、直近コミットを hash・短縮 hash・件名に分解する
@@ -216,15 +333,31 @@ local function add_command_entry(entries, display, command)
 end
 
 -- 差分の見方をひとつのリストにまとめる
--- files は DeltaMenu でファイル選択、all と commit は Delta で全ファイル表示にする
+-- files と commit はファイル選択、all は全ファイル表示にする
 local function picker_entries(root)
   local entries = {}
   local base = default_base(root)
 
-  add_command_entry(entries, "files  | uncommitted", "DeltaMenu HEAD")
+  add_entry(entries, "files  | uncommitted", function()
+    open_file_picker({
+      root = root,
+      ref = "HEAD",
+      include_untracked = true,
+      current_worktree = true,
+      title = "uncommitted files",
+    })
+  end)
   add_command_entry(entries, "all    | uncommitted", "Delta . 10 HEAD")
   add_command_entry(entries, "all    | HEAD commit", "Delta . 10 HEAD^!")
-  add_command_entry(entries, "files  | " .. base .. "...HEAD", "DeltaMenu " .. base .. "...HEAD")
+  add_entry(entries, "files  | " .. base .. "...HEAD", function()
+    open_file_picker({
+      root = root,
+      ref = base .. "...HEAD",
+      include_untracked = false,
+      current_worktree = true,
+      title = base .. "...HEAD files",
+    })
+  end)
   add_command_entry(entries, "all    | " .. base .. "...HEAD", "Delta . 10 " .. base .. "...HEAD")
 
   for _, wt in ipairs(worktrees(root)) do
@@ -233,7 +366,13 @@ local function picker_entries(root)
 
       if has_uncommitted(wt.path) then
         add_entry(entries, "wt     | " .. label .. " | uncommitted", function()
-          open_patch_diff(uncommitted_diff(wt.path), "wt/" .. label .. "/uncommitted")
+          open_file_picker({
+            root = wt.path,
+            ref = "HEAD",
+            include_untracked = true,
+            current_worktree = false,
+            title = "wt/" .. label .. "/uncommitted",
+          })
         end)
       end
 
@@ -241,20 +380,31 @@ local function picker_entries(root)
       local count = ahead_count(wt.path, wt_base)
       if count > 0 then
         add_entry(entries, string.format("wt     | %s | %s..HEAD (%d)", label, wt_base, count), function()
-          open_patch_diff(
-            diff_output(wt.path, { wt_base .. "...HEAD" }),
-            "wt/" .. label .. "/" .. wt_base .. "...HEAD"
-          )
+          open_file_picker({
+            root = wt.path,
+            ref = wt_base .. "...HEAD",
+            include_untracked = false,
+            current_worktree = false,
+            title = "wt/" .. label .. "/" .. wt_base .. "...HEAD",
+          })
         end)
       end
     end
   end
 
   for _, commit in ipairs(recent_commits(root)) do
-    add_command_entry(
+    add_entry(
       entries,
       string.format("commit | %s %s", commit.short_hash, commit.subject),
-      "Delta . 10 " .. commit.hash .. "^!"
+      function()
+        open_file_picker({
+          root = root,
+          ref = commit.hash .. "^!",
+          include_untracked = false,
+          current_worktree = true,
+          title = commit.short_hash .. " files",
+        })
+      end
     )
   end
 
