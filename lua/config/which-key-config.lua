@@ -15,6 +15,8 @@ wk.add({
   { "<leader>es", "<cmd>Neotree show<CR>", desc = "Neotree show" },
   { "<leader>ec", "<cmd>Neotree close<CR>", desc = "Neotree close" },
   { "<leader>et", "<cmd>Neotree toggle<CR>", desc = "Neotree toggle" },
+  { "<leader>eb", "<cmd>Neotree buffers<CR>", desc = "Neotree buffers" },
+  { "<leader>eg", "<cmd>Neotree git_status<CR>", desc = "Neotree git status" },
   { "<leader>f", group = "Telescope" }, -- group
   { "<leader>ff", telescope.find_files, desc = "Telescope find files" },
   { "<leader>fg", telescope.live_grep, desc = "Telescope live grep" },

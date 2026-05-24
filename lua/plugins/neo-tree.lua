@@ -9,6 +9,10 @@ return {
     },
     lazy = false, -- neo-tree will lazily load itself
     opts = {
+      source_selector = {
+        winbar = true,
+        statusline = false,
+      },
       filesystem = {
         follow_current_file = {
           enabled = true,
