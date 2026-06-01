@@ -106,14 +106,6 @@ local function has_uncommitted(path)
   return code == 0 and stdout ~= ""
 end
 
-local function upstream_or_default_base(path)
-  local code, stdout = run({ "git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}" }, path)
-  if code == 0 and stdout ~= "" then
-    return vim.trim(stdout)
-  end
-  return default_base(path)
-end
-
 local function ahead_count(path, base)
   local code, stdout = run({ "git", "rev-list", "--count", base .. "..HEAD" }, path)
   if code ~= 0 or stdout == "" then
@@ -297,8 +289,13 @@ end
 
 -- Telescope に並べるため、直近コミットを hash・短縮 hash・件名に分解する
 -- 区切り文字には通常のコミット件名に入りにくい unit separator を使う
-local function recent_commits(root)
-  local code, stdout, stderr = run({ "git", "log", "--format=%H%x1f%h%x1f%s", "-n", "50" }, root)
+local function recent_commits(root, range)
+  local command = { "git", "log", "--format=%H%x1f%h%x1f%s", "-n", "50" }
+  if range then
+    table.insert(command, range)
+  end
+
+  local code, stdout, stderr = run(command, root)
   if code ~= 0 then
     vim.notify(vim.trim(stderr), vim.log.levels.ERROR)
     return {}
@@ -329,6 +326,12 @@ end
 local function add_command_entry(entries, display, command)
   add_entry(entries, display, function()
     vim.cmd(command)
+  end)
+end
+
+local function add_patch_diff_entry(entries, display, root, ref, title)
+  add_entry(entries, display, function()
+    open_patch_diff(diff_output(root, { ref }), title)
   end)
 end
 
@@ -374,20 +377,56 @@ local function picker_entries(root)
             title = "wt/" .. label .. "/uncommitted",
           })
         end)
+        add_patch_diff_entry(
+          entries,
+          "wt all | " .. label .. " | uncommitted",
+          wt.path,
+          "HEAD",
+          "wt/" .. label .. "/uncommitted"
+        )
       end
 
-      local wt_base = upstream_or_default_base(wt.path)
+      local wt_base = default_base(wt.path)
       local count = ahead_count(wt.path, wt_base)
       if count > 0 then
+        local wt_ref = wt_base .. "...HEAD"
+        local wt_title = "wt/" .. label .. "/" .. wt_ref
+
         add_entry(entries, string.format("wt     | %s | %s..HEAD (%d)", label, wt_base, count), function()
           open_file_picker({
             root = wt.path,
-            ref = wt_base .. "...HEAD",
+            ref = wt_ref,
             include_untracked = false,
             current_worktree = false,
-            title = "wt/" .. label .. "/" .. wt_base .. "...HEAD",
+            title = wt_title,
           })
         end)
+        add_patch_diff_entry(
+          entries,
+          string.format("wt all | %s | %s..HEAD (%d)", label, wt_base, count),
+          wt.path,
+          wt_ref,
+          wt_title
+        )
+
+        for _, commit in ipairs(recent_commits(wt.path, wt_base .. "..HEAD")) do
+          add_entry(entries, string.format("wt commit | %s | %s %s", label, commit.short_hash, commit.subject), function()
+            open_file_picker({
+              root = wt.path,
+              ref = commit.hash .. "^!",
+              include_untracked = false,
+              current_worktree = false,
+              title = "wt/" .. label .. "/" .. commit.short_hash .. " files",
+            })
+          end)
+          add_patch_diff_entry(
+            entries,
+            string.format("wt all    | %s | %s %s", label, commit.short_hash, commit.subject),
+            wt.path,
+            commit.hash .. "^!",
+            "wt/" .. label .. "/" .. commit.short_hash
+          )
+        end
       end
     end
   end
