@@ -1,9 +1,6 @@
 return {
   {
     "kokusenz/deltaview.nvim",
-    dependencies = {
-      "kokusenz/delta.lua",
-    },
     config = function()
       local delta_treesitter = require("delta.utils_treesitter")
       local get_treesitter_highlight_captures = delta_treesitter.get_treesitter_highlight_captures
