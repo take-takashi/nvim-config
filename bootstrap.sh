@@ -6,6 +6,3 @@ if [ -e "$HOME/.config/nvim" ]; then
 else
     ln -s "$(pwd)" "$HOME/.config/nvim"
 fi
-
-# Lazyでプラグインを事前にインストール
-nvim --headless "+Lazy! sync" +qa
