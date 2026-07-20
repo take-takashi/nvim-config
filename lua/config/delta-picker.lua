@@ -287,10 +287,10 @@ local function open_file_picker(opts)
   }):find()
 end
 
--- Telescope に並べるため、直近コミットを hash・短縮 hash・件名に分解する
+-- Telescope に並べるため、直近コミットを hash・親 hash・短縮 hash・件名に分解する
 -- 区切り文字には通常のコミット件名に入りにくい unit separator を使う
 local function recent_commits(root, range)
-  local command = { "git", "log", "--format=%H%x1f%h%x1f%s", "-n", "50" }
+  local command = { "git", "log", "--format=%H%x1f%h%x1f%P%x1f%s", "-n", "50" }
   if range then
     table.insert(command, range)
   end
@@ -304,15 +304,25 @@ local function recent_commits(root, range)
   local commits = {}
   for _, line in ipairs(output_lines(stdout)) do
     local parts = vim.split(line, "\31", { plain = true })
-    if #parts >= 3 then
+    if #parts >= 4 then
       table.insert(commits, {
         hash = parts[1],
         short_hash = parts[2],
-        subject = parts[3],
+        parents = vim.split(parts[3], " ", { plain = true, trimempty = true }),
+        subject = parts[4],
       })
     end
   end
   return commits
+end
+
+-- merge commit の ^! は combined diff になり deltaview が解析できない
+-- merge commit は第1親と比較し、通常の git diff 形式にする
+local function commit_diff_ref(commit)
+  if #commit.parents > 1 then
+    return commit.parents[1] .. ".." .. commit.hash
+  end
+  return commit.hash .. "^!"
 end
 
 -- Telescope の表示名と、選択時に実行する deltaview コマンドを対応づける
@@ -410,10 +420,11 @@ local function picker_entries(root)
         )
 
         for _, commit in ipairs(recent_commits(wt.path, wt_base .. "..HEAD")) do
+          local commit_ref = commit_diff_ref(commit)
           add_entry(entries, string.format("wt commit | %s | %s %s", label, commit.short_hash, commit.subject), function()
             open_file_picker({
               root = wt.path,
-              ref = commit.hash .. "^!",
+              ref = commit_ref,
               include_untracked = false,
               current_worktree = false,
               title = "wt/" .. label .. "/" .. commit.short_hash .. " files",
@@ -423,7 +434,7 @@ local function picker_entries(root)
             entries,
             string.format("wt all    | %s | %s %s", label, commit.short_hash, commit.subject),
             wt.path,
-            commit.hash .. "^!",
+            commit_ref,
             "wt/" .. label .. "/" .. commit.short_hash
           )
         end
@@ -432,13 +443,14 @@ local function picker_entries(root)
   end
 
   for _, commit in ipairs(recent_commits(root)) do
+    local commit_ref = commit_diff_ref(commit)
     add_entry(
       entries,
       string.format("commit | %s %s", commit.short_hash, commit.subject),
       function()
         open_file_picker({
           root = root,
-          ref = commit.hash .. "^!",
+          ref = commit_ref,
           include_untracked = false,
           current_worktree = true,
           title = commit.short_hash .. " files",
